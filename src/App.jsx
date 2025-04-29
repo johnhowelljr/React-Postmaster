@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Import useEffect
 import {
 	TextField, Button, Select, MenuItem, FormControl, InputLabel,
 	Grid, Typography, Box, Paper, IconButton, List, ListItem, ListItemText, Divider
@@ -8,10 +8,19 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import axios from 'axios';
 
 function App() {
-	const [method, setMethod] = useState('GET');
-	const [url, setUrl] = useState('https://httpbin.org/get'); // Default URL
-	const [headers, setHeaders] = useState([{ key: '', value: '' }]);
-	const [body, setBody] = useState('');
+	// Load initial state from localStorage or use defaults
+	const [method, setMethod] = useState(() => localStorage.getItem('react-postmaster-method') || 'GET');
+	const [url, setUrl] = useState(() => localStorage.getItem('react-postmaster-url') || 'https://httpbin.org/get');
+	const [headers, setHeaders] = useState(() => {
+		const savedHeaders = localStorage.getItem('react-postmaster-headers');
+		try {
+			return savedHeaders ? JSON.parse(savedHeaders) : [{ key: '', value: '' }];
+		} catch (e) {
+			console.error("Failed to parse saved headers:", e);
+			return [{ key: '', value: '' }];
+		}
+	});
+	const [body, setBody] = useState(() => localStorage.getItem('react-postmaster-body') || '');
 	const [response, setResponse] = useState(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
@@ -83,6 +92,25 @@ function App() {
 			setLoading(false);
 		}
 	};
+
+	// --- LocalStorage Effects ---
+	useEffect(() => {
+		localStorage.setItem('react-postmaster-method', method);
+	}, [method]);
+
+	useEffect(() => {
+		localStorage.setItem('react-postmaster-url', url);
+	}, [url]);
+
+	useEffect(() => {
+		localStorage.setItem('react-postmaster-headers', JSON.stringify(headers));
+	}, [headers]);
+
+	useEffect(() => {
+		localStorage.setItem('react-postmaster-body', body);
+	}, [body]);
+	// --- End LocalStorage Effects ---
+
 
 	// Styles for consistent font size
 	const inputStyle = { sx: { fontSize: '12px' } };
@@ -177,17 +205,25 @@ function App() {
 										/>
 									</Grid>
 									<Grid item xs={2}>
+										{/* Keep remove button here */}
 										<IconButton onClick={() => removeHeader(index)} size="small" disabled={headers.length === 1 && index === 0 && !header.key && !header.value}>
 											<RemoveCircleOutlineIcon fontSize="small" />
 										</IconButton>
-										{index === headers.length - 1 && (
-											<IconButton onClick={addHeader} size="small">
-												<AddCircleOutlineIcon fontSize="small" />
-											</IconButton>
-										)}
+										{/* Remove add button from here */}
 									</Grid>
 								</Grid>
 							))}
+							{/* Add button container after the map */}
+							<Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+								<Button
+									size="small"
+									startIcon={<AddCircleOutlineIcon />}
+									onClick={addHeader}
+									sx={{ fontSize: '12px', textTransform: 'none' }}
+								>
+									Add Header
+								</Button>
+							</Box>
 						</Box>
 
 						{method === 'POST' && (
